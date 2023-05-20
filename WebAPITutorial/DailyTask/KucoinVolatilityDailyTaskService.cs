@@ -13,13 +13,14 @@
 
 		protected override async Task ExecuteAsync(CancellationToken stoppingToken)
 		{
-			currentTime = DateTime.UtcNow;
+			currentTime = DateTime.Now;
 			DateTime startTime = currentTime.Date.AddHours(0); // 00:00
-			DateTime endTime = currentTime.Date.AddHours(1); // 01:00
+			DateTime endTime = currentTime.Date.AddHours(3); // 01:00
 
 			if (currentTime >= startTime && currentTime < endTime)
 			{
 				await _task.DoTaskAsync();
+				Console.WriteLine("Vol have gotten successfully");
 				await Task.Delay(interval, stoppingToken);
 			}
 			else

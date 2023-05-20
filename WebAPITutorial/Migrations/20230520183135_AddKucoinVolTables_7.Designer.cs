@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using WebAPITutorial.DBContext;
@@ -11,9 +12,11 @@ using WebAPITutorial.DBContext;
 namespace WebAPITutorial.Migrations
 {
     [DbContext(typeof(KucoinVolContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20230520183135_AddKucoinVolTables_7")]
+    partial class AddKucoinVolTables_7
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

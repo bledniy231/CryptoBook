@@ -96,7 +96,10 @@ namespace WebAPITutorial.Exchanges
 			p.LastPrice = kucoinProduct.LastPrice * usdCurrency;
 			p.BaseVolume = kucoinProduct.Volume;
 			p.QuoteVolume = kucoinProduct.QuoteVolume;
-			p.Volatility = volatilityToday[kucoinProduct.Symbol];  //GetVolatility(kucoinProduct);
+			//if (kucoinProduct.Symbol == "BTC-USDT")
+				p.Volatility = volatilityToday[kucoinProduct.Symbol];  //GetVolatility(kucoinProduct);
+			//else
+				//p.Volatility = 0;
 			p.Liquidity = GetLiquidity(kucoinProduct.Symbol);
 			p.PriceChange = kucoinProduct.ChangePrice;
 			p.PriceChangePercent = kucoinProduct.ChangePercentage;

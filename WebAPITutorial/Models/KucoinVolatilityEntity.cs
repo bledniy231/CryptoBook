@@ -10,11 +10,11 @@ namespace WebAPITutorial.Models
 		public long KucoinVolId { get; set; }
 		//public abstract string Symbol { get; set; }
 		public bool IsArchived { get; set; } = false;
-		public DateTime Date { get; set; } = DateTime.Now;
+		public DateTime Date { get; set; } = DateTime.UtcNow;
 		[Precision(18, 10)]
 		public double QuoteVolume { get; set; }
 		[Precision(18, 10)]
-		public double ChangePercentage { get; set; }
+		public double Price { get; set; }
 
 		[Table(name: "BTC_USDT_Items")]
 		public class BTC_USDT_Item : KucoinVolatilityEntity { }

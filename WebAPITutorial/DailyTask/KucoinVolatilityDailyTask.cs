@@ -1,7 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Kucoin.Net.Objects.Models.Spot;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using WebAPITutorial.DBContext;
 using WebAPITutorial.Exchanges;
+using WebAPITutorial.Models;
 using WebAPITutorial.Repos;
 using static WebAPITutorial.Models.KucoinVolatilityEntity;
 
@@ -11,8 +13,6 @@ namespace WebAPITutorial.DailyTask
 	{
 		private KucoinExchange _exchange;
 		private IServiceProvider _serviceProvider;
-		//private KucoinVolContext _dataContext;
-		//private KucoinVolRepos _repos = new KucoinVolRepos();
 
 		private readonly List<string> pairs = new List<string>()
 		{
@@ -33,6 +33,56 @@ namespace WebAPITutorial.DailyTask
 			_serviceProvider = serviceProvider;
 		}
 
+		private void SetVolatilityWeight<T>(KucoinAllTick prod, List<T> list) where T : KucoinVolatilityEntity
+		{
+
+			double denominator = list.Sum(c => c.QuoteVolume);
+			double numerator = 0;
+			double averDevitation = 0;
+			list.ForEach(c =>
+			{
+				double logReturn = Math.Log((prod.LastPrice != null ? (double)prod.LastPrice : 0) / c.Price);
+				numerator += logReturn * c.QuoteVolume;
+			});
+			double weightedAverReturn = numerator / denominator;
+			list.ForEach(c =>
+			{
+				double logReturn = Math.Log((prod.LastPrice != null ? (double)prod.LastPrice : 0) / c.Price);
+				double devitation = (logReturn - weightedAverReturn) * (logReturn - weightedAverReturn);
+				averDevitation += devitation;
+			});
+			double vol = Math.Sqrt(averDevitation / list.Count);
+
+			if (!_exchange.volatilityToday.ContainsKey(prod.Symbol))
+				_exchange.volatilityToday.Add(prod.Symbol, Double.IsNormal(vol) ? Math.Round(vol, 10) : 0);
+			else _exchange.volatilityToday[prod.Symbol] = Double.IsNormal(vol) ? Math.Round(vol, 10) : 0;
+		}
+
+		private void SetVolatilityHistorical<T>(KucoinAllTick prod, List<T> list) where T : KucoinVolatilityEntity
+		{
+			double averDevitation = 0;
+			double mean = 0;
+			list.ForEach(c =>
+			{
+				double a = (prod.LastPrice != null ? (double)prod.LastPrice : 0) / c.Price;
+				double logReturn = Math.Log(a);
+				mean += logReturn;
+			});
+			mean = mean / list.Count;
+			list.ForEach(c =>
+			{
+				double a = (prod.LastPrice != null ? (double)prod.LastPrice : 0) / c.Price;
+				double logReturn = Math.Log(a);
+				double devitation = (logReturn - mean) * (logReturn - mean);
+				averDevitation += devitation;
+			});
+			double vol = Math.Sqrt(averDevitation /*/ list.Count*/);
+
+			if (!_exchange.volatilityToday.ContainsKey(prod.Symbol))
+				_exchange.volatilityToday.Add(prod.Symbol, Double.IsNormal(vol) ? Math.Round(vol * 100, 10) : 0);
+			else _exchange.volatilityToday[prod.Symbol] = Double.IsNormal(vol) ? Math.Round(vol * 100, 10) : 0;
+		}
+
 		public async Task DoTaskAsync()
 		{
 			var result = await _exchange.client.SpotApi.ExchangeData.GetTickersAsync();
@@ -43,286 +93,279 @@ namespace WebAPITutorial.DailyTask
 				{
 					using (var scope = _serviceProvider.CreateScope())
 					{
-						double sumQV, denominator, numerator;
+						//double denominator, numerator = 0;
+						//double weightedAverReturn = 0;
+						//double averDevitation = 0;
+						byte amountOfRows = 10;
 						var _dataContext = scope.ServiceProvider.GetRequiredService<KucoinVolContext>();
 						switch (p.Symbol)
 						{
 							case "BTC-USDT":
-								if (p.QuoteVolume != null && p.ChangePercentage != null)
+								if (p.QuoteVolume != null && p.LastPrice != null)
 									_dataContext.KucoinVolBTC.Add(new BTC_USDT_Item
 									{
 										QuoteVolume = (double)p.QuoteVolume,
-										ChangePercentage = (double)p.ChangePercentage
+										Price = (double)p.LastPrice
 									});
 								else
 									_dataContext.KucoinVolBTC.Add(new BTC_USDT_Item
 									{
 										QuoteVolume = 0,
-										ChangePercentage = 0
+										Price = 0
 									});
 								_dataContext.SaveChanges();
 
-								var listBTC = _dataContext.KucoinVolBTC.ToList();
+								var listBTC = _dataContext.KucoinVolBTC.ToList().TakeLast(amountOfRows).ToList();
 
-								sumQV = listBTC.Sum(btc => btc.QuoteVolume);
-								denominator = listBTC.Sum(btc => btc.QuoteVolume * btc.ChangePercentage) / sumQV;
-								numerator = Math.Sqrt(listBTC.Sum(btc => btc.QuoteVolume * (btc.ChangePercentage - denominator * denominator)) / sumQV);
+								SetVolatilityWeight(p, listBTC);
+								//SetVolatilityHistorical(p, listBTC);
 
-								if (!_exchange.volatilityToday.ContainsKey(p.Symbol))
-									_exchange.volatilityToday.Add(p.Symbol, numerator / denominator);
-								else _exchange.volatilityToday[p.Symbol] = numerator / denominator;
+								//sumQV = listBTC.Sum(btc => btc.QuoteVolume);
+								//denominator = listBTC.Sum(btc => btc.QuoteVolume * btc.ChangePercentage) / sumQV;
+								//numerator = Math.Sqrt(listBTC.Sum(btc => btc.QuoteVolume * (btc.ChangePercentage - denominator * denominator)) / sumQV);
 
 								listBTC.Clear();
 								break;
 
 							case "ETH-USDT":
-								if (p.QuoteVolume != null && p.ChangePercentage != null)
+								if (p.QuoteVolume != null && p.LastPrice != null)
 									_dataContext.KucoinVolETH.Add(new ETH_USDT_Item
 									{
 										QuoteVolume = (double)p.QuoteVolume,
-										ChangePercentage = (double)p.ChangePercentage
+										Price = (double)p.LastPrice
 									});
 								else
 									_dataContext.KucoinVolETH.Add(new ETH_USDT_Item
 									{
 										QuoteVolume = 0,
-										ChangePercentage = 0
+										Price = 0
 									});
 								_dataContext.SaveChanges();
 
-								var listETH = _dataContext.KucoinVolETH.ToList();
+								var listETH = _dataContext.KucoinVolETH.ToList().TakeLast(amountOfRows).ToList();
 
-								sumQV = listETH.Sum(eth => eth.QuoteVolume);
-								denominator = listETH.Sum(eth => eth.QuoteVolume * eth.ChangePercentage) / sumQV;
-								numerator = Math.Sqrt(listETH.Sum(eth => eth.QuoteVolume * (eth.ChangePercentage - denominator * denominator)) / sumQV);
+								SetVolatilityWeight(p, listETH);
+								//SetVolatilityHistorical(p, listETH);
 
-								if (!_exchange.volatilityToday.ContainsKey(p.Symbol))
-									_exchange.volatilityToday.Add(p.Symbol, numerator / denominator);
-								else _exchange.volatilityToday[p.Symbol] = numerator / denominator;
+								//sumQV = listETH.Sum(eth => eth.QuoteVolume);
+								//denominator = listETH.Sum(eth => eth.QuoteVolume * eth.ChangePercentage) / sumQV;
+								//numerator = Math.Sqrt(listETH.Sum(eth => eth.QuoteVolume * (eth.ChangePercentage - denominator * denominator)) / sumQV);
 
 								listETH.Clear();
 								break;
 
 							case "BNB-USDT":
-								if (p.QuoteVolume != null && p.ChangePercentage != null)
+								if (p.QuoteVolume != null && p.LastPrice != null)
 									_dataContext.KucoinVolBNB.Add(new BNB_USDT_Item
 									{
 										QuoteVolume = (double)p.QuoteVolume,
-										ChangePercentage = (double)p.ChangePercentage
+										Price = (double)p.LastPrice
 									});
 								else
 									_dataContext.KucoinVolBNB.Add(new BNB_USDT_Item
 									{
 										QuoteVolume = 0,
-										ChangePercentage = 0
+										Price = 0
 									});
 								_dataContext.SaveChanges();
 
-								var listBNB = _dataContext.KucoinVolBNB.ToList();
+								var listBNB = _dataContext.KucoinVolBNB.ToList().TakeLast(amountOfRows).ToList();
 
-								sumQV = listBNB.Sum(eth => eth.QuoteVolume);
-								denominator = listBNB.Sum(eth => eth.QuoteVolume * eth.ChangePercentage) / sumQV;
-								numerator = Math.Sqrt(listBNB.Sum(eth => eth.QuoteVolume * (eth.ChangePercentage - denominator * denominator)) / sumQV);
+								SetVolatilityWeight(p, listBNB);
+								//SetVolatilityHistorical(p, listBNB);
 
-								if (!_exchange.volatilityToday.ContainsKey(p.Symbol))
-									_exchange.volatilityToday.Add(p.Symbol, numerator / denominator);
-								else _exchange.volatilityToday[p.Symbol] = numerator / denominator;
+								//sumQV = listBNB.Sum(eth => eth.QuoteVolume);
+								//denominator = listBNB.Sum(eth => eth.QuoteVolume * eth.ChangePercentage) / sumQV;
+								//numerator = Math.Sqrt(listBNB.Sum(eth => eth.QuoteVolume * (eth.ChangePercentage - denominator * denominator)) / sumQV);
 
 								listBNB.Clear();
 								break;
 
 							case "XRP-USDT":
-								if (p.QuoteVolume != null && p.ChangePercentage != null)
+								if (p.QuoteVolume != null && p.LastPrice != null)
 									_dataContext.KucoinVolXRP.Add(new XRP_USDT_Item
 									{
 										QuoteVolume = (double)p.QuoteVolume,
-										ChangePercentage = (double)p.ChangePercentage
+										Price = (double)p.LastPrice
 									});
 								else
 									_dataContext.KucoinVolXRP.Add(new XRP_USDT_Item
 									{
 										QuoteVolume = 0,
-										ChangePercentage = 0
+										Price = 0
 									});
 								_dataContext.SaveChanges();
 
-								var listXRP = _dataContext.KucoinVolXRP.ToList();
+								var listXRP = _dataContext.KucoinVolXRP.ToList().TakeLast(amountOfRows).ToList();
 
-								sumQV = listXRP.Sum(eth => eth.QuoteVolume);
-								denominator = listXRP.Sum(eth => eth.QuoteVolume * eth.ChangePercentage) / sumQV;
-								numerator = Math.Sqrt(listXRP.Sum(eth => eth.QuoteVolume * (eth.ChangePercentage - denominator * denominator)) / sumQV);
+								SetVolatilityWeight(p, listXRP);
+								//SetVolatilityHistorical(p, listXRP);
 
-								if (!_exchange.volatilityToday.ContainsKey(p.Symbol))
-									_exchange.volatilityToday.Add(p.Symbol, numerator / denominator);
-								else _exchange.volatilityToday[p.Symbol] = numerator / denominator;
+								//sumQV = listXRP.Sum(eth => eth.QuoteVolume);
+								//denominator = listXRP.Sum(eth => eth.QuoteVolume * eth.ChangePercentage) / sumQV;
+								//numerator = Math.Sqrt(listXRP.Sum(eth => eth.QuoteVolume * (eth.ChangePercentage - denominator * denominator)) / sumQV);
 
 								listXRP.Clear();
 								break;
 
 							case "UNI-USDT":
-								if (p.QuoteVolume != null && p.ChangePercentage != null)
+								if (p.QuoteVolume != null && p.LastPrice != null)
 									_dataContext.KucoinVolUNI.Add(new UNI_USDT_Item
 									{
 										QuoteVolume = (double)p.QuoteVolume,
-										ChangePercentage = (double)p.ChangePercentage
+										Price = (double)p.LastPrice
 									});
 								else
 									_dataContext.KucoinVolUNI.Add(new UNI_USDT_Item
 									{
 										QuoteVolume = 0,
-										ChangePercentage = 0
+										Price = 0
 									});
 								_dataContext.SaveChanges();
 
-								var listUNI = _dataContext.KucoinVolUNI.ToList();
+								var listUNI = _dataContext.KucoinVolUNI.ToList().TakeLast(amountOfRows).ToList();
 
-								sumQV = listUNI.Sum(eth => eth.QuoteVolume);
-								denominator = listUNI.Sum(eth => eth.QuoteVolume * eth.ChangePercentage) / sumQV;
-								numerator = Math.Sqrt(listUNI.Sum(eth => eth.QuoteVolume * (eth.ChangePercentage - denominator * denominator)) / sumQV);
+								SetVolatilityWeight(p, listUNI);
+								//SetVolatilityHistorical(p, listUNI);
 
-								if (!_exchange.volatilityToday.ContainsKey(p.Symbol))
-									_exchange.volatilityToday.Add(p.Symbol, numerator / denominator);
-								else _exchange.volatilityToday[p.Symbol] = numerator / denominator;
+								//sumQV = listUNI.Sum(eth => eth.QuoteVolume);
+								//denominator = listUNI.Sum(eth => eth.QuoteVolume * eth.ChangePercentage) / sumQV;
+								//numerator = Math.Sqrt(listUNI.Sum(eth => eth.QuoteVolume * (eth.ChangePercentage - denominator * denominator)) / sumQV);
 
 								listUNI.Clear();
 								break;
 
 							case "LTC-USDT":
-								if (p.QuoteVolume != null && p.ChangePercentage != null)
+								if (p.QuoteVolume != null && p.LastPrice != null)
 									_dataContext.KucoinVolLTC.Add(new LTC_USDT_Item
 									{
 										QuoteVolume = (double)p.QuoteVolume,
-										ChangePercentage = (double)p.ChangePercentage
+										Price = (double)p.LastPrice
 									});
 								else
 									_dataContext.KucoinVolLTC.Add(new LTC_USDT_Item
 									{
 										QuoteVolume = 0,
-										ChangePercentage = 0
+										Price = 0
 									});
 								_dataContext.SaveChanges();
 
-								var listLTC = _dataContext.KucoinVolLTC.ToList();
+								var listLTC = _dataContext.KucoinVolLTC.ToList().TakeLast(amountOfRows).ToList();
 
-								sumQV = listLTC.Sum(eth => eth.QuoteVolume);
-								denominator = listLTC.Sum(eth => eth.QuoteVolume * eth.ChangePercentage) / sumQV;
-								numerator = Math.Sqrt(listLTC.Sum(eth => eth.QuoteVolume * (eth.ChangePercentage - denominator * denominator)) / sumQV);
+								SetVolatilityWeight(p, listLTC);
+								//SetVolatilityHistorical(p, listLTC);
 
-								if (!_exchange.volatilityToday.ContainsKey(p.Symbol))
-									_exchange.volatilityToday.Add(p.Symbol, numerator / denominator);
-								else _exchange.volatilityToday[p.Symbol] = numerator / denominator;
+								//sumQV = listLTC.Sum(eth => eth.QuoteVolume);
+								//denominator = listLTC.Sum(eth => eth.QuoteVolume * eth.ChangePercentage) / sumQV;
+								//numerator = Math.Sqrt(listLTC.Sum(eth => eth.QuoteVolume * (eth.ChangePercentage - denominator * denominator)) / sumQV);
 
 								listLTC.Clear();
 								break;
 
 							case "DOGE-USDT":
-								if (p.QuoteVolume != null && p.ChangePercentage != null)
+								if (p.QuoteVolume != null && p.LastPrice != null)
 									_dataContext.KucoinVolDOGE.Add(new DOGE_USDT_Item
 									{
 										QuoteVolume = (double)p.QuoteVolume,
-										ChangePercentage = (double)p.ChangePercentage
+										Price = (double)p.LastPrice
 									});
 								else
 									_dataContext.KucoinVolDOGE.Add(new DOGE_USDT_Item
 									{
 										QuoteVolume = 0,
-										ChangePercentage = 0
+										Price = 0
 									});
 								_dataContext.SaveChanges();
 
-								var listDOGE = _dataContext.KucoinVolDOGE.ToList();
+								var listDOGE = _dataContext.KucoinVolDOGE.ToList().TakeLast(amountOfRows).ToList();
 
-								sumQV = listDOGE.Sum(eth => eth.QuoteVolume);
-								denominator = listDOGE.Sum(eth => eth.QuoteVolume * eth.ChangePercentage) / sumQV;
-								numerator = Math.Sqrt(listDOGE.Sum(eth => eth.QuoteVolume * (eth.ChangePercentage - denominator * denominator)) / sumQV);
+								SetVolatilityWeight(p, listDOGE);
+								//SetVolatilityHistorical(p, listDOGE);
 
-								if (!_exchange.volatilityToday.ContainsKey(p.Symbol))
-									_exchange.volatilityToday.Add(p.Symbol, numerator / denominator);
-								else _exchange.volatilityToday[p.Symbol] = numerator / denominator;
+								//sumQV = listDOGE.Sum(eth => eth.QuoteVolume);
+								//denominator = listDOGE.Sum(eth => eth.QuoteVolume * eth.ChangePercentage) / sumQV;
+								//numerator = Math.Sqrt(listDOGE.Sum(eth => eth.QuoteVolume * (eth.ChangePercentage - denominator * denominator)) / sumQV);
 
 								listDOGE.Clear();
 								break;
 
 							case "MATIC-USDT":
-								if (p.QuoteVolume != null && p.ChangePercentage != null)
+								if (p.QuoteVolume != null && p.LastPrice != null)
 									_dataContext.KucoinVolMATIC.Add(new MATIC_USDT_Item
 									{
 										QuoteVolume = (double)p.QuoteVolume,
-										ChangePercentage = (double)p.ChangePercentage
+										Price = (double)p.LastPrice
 									});
 								else
 									_dataContext.KucoinVolMATIC.Add(new MATIC_USDT_Item
 									{
 										QuoteVolume = 0,
-										ChangePercentage = 0
+										Price = 0
 									});
 								_dataContext.SaveChanges();
 
-								var listMATIC = _dataContext.KucoinVolMATIC.ToList();
+								var listMATIC = _dataContext.KucoinVolMATIC.ToList().TakeLast(amountOfRows).ToList();
 
-								sumQV = listMATIC.Sum(eth => eth.QuoteVolume);
-								denominator = listMATIC.Sum(eth => eth.QuoteVolume * eth.ChangePercentage) / sumQV;
-								numerator = Math.Sqrt(listMATIC.Sum(eth => eth.QuoteVolume * (eth.ChangePercentage - denominator * denominator)) / sumQV);
+								SetVolatilityWeight(p, listMATIC);
+								//SetVolatilityHistorical(p, listMATIC);
 
-								if (!_exchange.volatilityToday.ContainsKey(p.Symbol))
-									_exchange.volatilityToday.Add(p.Symbol, numerator / denominator);
-								else _exchange.volatilityToday[p.Symbol] = numerator / denominator;
+								//sumQV = listMATIC.Sum(eth => eth.QuoteVolume);
+								//denominator = listMATIC.Sum(eth => eth.QuoteVolume * eth.ChangePercentage) / sumQV;
+								//numerator = Math.Sqrt(listMATIC.Sum(eth => eth.QuoteVolume * (eth.ChangePercentage - denominator * denominator)) / sumQV);
 
 								listMATIC.Clear();
 								break;
 
 							case "SOL-USDT":
-								if (p.QuoteVolume != null && p.ChangePercentage != null)
+								if (p.QuoteVolume != null && p.LastPrice != null)
 									_dataContext.KucoinVolSOL.Add(new SOL_USDT_Item
 									{
 										QuoteVolume = (double)p.QuoteVolume,
-										ChangePercentage = (double)p.ChangePercentage
+										Price = (double)p.LastPrice
 									});
 								else
 									_dataContext.KucoinVolSOL.Add(new SOL_USDT_Item
 									{
 										QuoteVolume = 0,
-										ChangePercentage = 0
+										Price = 0
 									});
 								_dataContext.SaveChanges();
 
-								var listSOL = _dataContext.KucoinVolSOL.ToList();
+								var listSOL = _dataContext.KucoinVolSOL.ToList().TakeLast(amountOfRows).ToList();
 
-								sumQV = listSOL.Sum(eth => eth.QuoteVolume);
-								denominator = listSOL.Sum(eth => eth.QuoteVolume * eth.ChangePercentage) / sumQV;
-								numerator = Math.Sqrt(listSOL.Sum(eth => eth.QuoteVolume * (eth.ChangePercentage - denominator * denominator)) / sumQV);
+								SetVolatilityWeight(p, listSOL);
+								//SetVolatilityHistorical(p, listSOL);
 
-								if (!_exchange.volatilityToday.ContainsKey(p.Symbol))
-									_exchange.volatilityToday.Add(p.Symbol, numerator / denominator);
-								else _exchange.volatilityToday[p.Symbol] = numerator / denominator;
+								//sumQV = listSOL.Sum(eth => eth.QuoteVolume);
+								//denominator = listSOL.Sum(eth => eth.QuoteVolume * eth.ChangePercentage) / sumQV;
+								//numerator = Math.Sqrt(listSOL.Sum(eth => eth.QuoteVolume * (eth.ChangePercentage - denominator * denominator)) / sumQV);
 
 								listSOL.Clear();
 								break;
 
 							case "ARB-USDT":
-								if (p.QuoteVolume != null && p.ChangePercentage != null)
+								if (p.QuoteVolume != null && p.LastPrice != null)
 									_dataContext.KucoinVolARB.Add(new ARB_USDT_Item
 									{
 										QuoteVolume = (double)p.QuoteVolume,
-										ChangePercentage = (double)p.ChangePercentage
+										Price = (double)p.LastPrice
 									});
 								else
 									_dataContext.KucoinVolARB.Add(new ARB_USDT_Item
 									{
 										QuoteVolume = 0,
-										ChangePercentage = 0
+										Price = 0
 									});
 								_dataContext.SaveChanges();
 
-								var listARB = _dataContext.KucoinVolARB.ToList();
+								var listARB = _dataContext.KucoinVolARB.ToList().TakeLast(amountOfRows).ToList();
 
-								sumQV = listARB.Sum(eth => eth.QuoteVolume);
-								denominator = listARB.Sum(eth => eth.QuoteVolume * eth.ChangePercentage) / sumQV;
-								numerator = Math.Sqrt(listARB.Sum(eth => eth.QuoteVolume * (eth.ChangePercentage - denominator * denominator)) / sumQV);
+								SetVolatilityWeight(p, listARB);
+								//SetVolatilityHistorical(p, listARB);
 
-								if (!_exchange.volatilityToday.ContainsKey(p.Symbol))
-									_exchange.volatilityToday.Add(p.Symbol, numerator / denominator);
-								else _exchange.volatilityToday[p.Symbol] = numerator / denominator;
+								//sumQV = listARB.Sum(eth => eth.QuoteVolume);
+								//denominator = listARB.Sum(eth => eth.QuoteVolume * eth.ChangePercentage) / sumQV;
+								//numerator = Math.Sqrt(listARB.Sum(eth => eth.QuoteVolume * (eth.ChangePercentage - denominator * denominator)) / sumQV);
 
 								listARB.Clear();
 								break;
