@@ -41,9 +41,9 @@ namespace WebAPITutorial.Exchanges
 
 		public Dictionary<string, double> volatilityToday = new Dictionary<string, double>();
 
-		protected override IEnumerable<Product> GetTickersUSDT()
+		public override async Task<IEnumerable<Product>> GetTickersUSDTAsync()
 		{
-			var result = client.SpotApi.ExchangeData.GetTickersAsync().Result;
+			var result = await client.SpotApi.ExchangeData.GetTickersAsync();
 			List<Product> products = new List<Product>();
 
 			if (result.Success)
@@ -53,9 +53,9 @@ namespace WebAPITutorial.Exchanges
 			return products;
 		}
 
-		protected override IEnumerable<Product> GetTickersRUB()
+		public  override async Task<IEnumerable<Product>> GetTickersRUBAsync()
 		{
-			var result = client.SpotApi.ExchangeData.GetTickersAsync().Result;
+			var result = await client.SpotApi.ExchangeData.GetTickersAsync();
 			List<Product> products = new List<Product>();
 
 			if (result.Success)
@@ -65,24 +65,24 @@ namespace WebAPITutorial.Exchanges
 			return products;
 		}
 
-		protected override List<Kline> GetKlinesCommonSpotClient(string? symbol, int intervalMin, int periodOfHours)
+		public override async Task<List<Kline>> GetKlinesCommonSpotClientAsync(string symbol, int intervalMin, int periodOfHours)
 		{
-			if (symbol == null) return new List<Kline>();
+			if (!pairsUSDT.Contains(symbol)) return new List<Kline>();
 			List<Kline> klines = new List<Kline>();
 			int minutes = intervalMin % 60;
 			int hours = (intervalMin - minutes) / 60;
 			TimeSpan timeSpan = new TimeSpan(hours, minutes, 0);
-			var result = client.SpotApi.CommonSpotClient.GetKlinesAsync(symbol, timeSpan, DateTime.Now.AddHours(-1 * periodOfHours), DateTime.Now).Result;
+			var result = await client.SpotApi.CommonSpotClient.GetKlinesAsync(symbol, timeSpan, DateTime.Now.AddHours(-1 * periodOfHours), DateTime.Now);
 			if (result.Success && result.Data.Count() > 0)
 				klines = result.Data.ToList();
 			return klines;
 		}
 
-		protected override IEnumerable<KucoinKline> GetKlinesExchangeData(string? symbol, int periodOfHours)
+		public override async Task<List<KucoinKline>> GetKlinesExchangeDataAsync<KucoinKline>(string symbol, int periodOfHours)
 		{
-			if (symbol == null) throw new ArgumentNullException("Symbol is not defined");
-			var result = client.SpotApi.ExchangeData.GetKlinesAsync(symbol, Kucoin.Net.Enums.KlineInterval.OneMinute, DateTime.Now.AddHours(-1 * periodOfHours), DateTime.Now).Result;
-			return result.Data;
+			if (!pairsUSDT.Contains(symbol)) return new List<KucoinKline>();
+			var result = await client.SpotApi.ExchangeData.GetKlinesAsync(symbol, Kucoin.Net.Enums.KlineInterval.OneMinute, DateTime.Now.AddHours(-1 * periodOfHours), DateTime.Now);
+			return (List<KucoinKline>)result.Data;
 		}
 
 
@@ -100,12 +100,13 @@ namespace WebAPITutorial.Exchanges
 				p.Volatility = volatilityToday[kucoinProduct.Symbol];  //GetVolatility(kucoinProduct);
 			//else
 				//p.Volatility = 0;
-			p.Liquidity = GetLiquidity(kucoinProduct.Symbol);
+			p.Liquidity = GetLiquidity(kucoinProduct.Symbol).Result;
 			p.PriceChange = kucoinProduct.ChangePrice;
 			p.PriceChangePercent = kucoinProduct.ChangePercentage;
 			return p;
 		}
 
+		// Useless
 		private double GetVolatility(KucoinAllTick kucoinProduct)
 		{
 			double result = 0;
@@ -117,9 +118,9 @@ namespace WebAPITutorial.Exchanges
 				//TODO: реализация метода взвешенной волотильности
 			return Double.IsNormal(result) ? Math.Round(result, 5) : 0;
 		}
-		private decimal GetLiquidity(string symbol)
+		private async Task<decimal> GetLiquidity(string symbol)
 		{
-			var result = client.SpotApi.ExchangeData.GetAggregatedPartialOrderBookAsync(symbol, 20).Result;
+			var result = await client.SpotApi.ExchangeData.GetAggregatedPartialOrderBookAsync(symbol, 20);
 			decimal asks = 0;
 			decimal bids = 0;
 

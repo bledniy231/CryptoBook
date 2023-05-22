@@ -1,5 +1,4 @@
 ﻿using Binance.Net.Clients;
-using Binance.Net.Interfaces;
 using Binance.Net.Objects.Models.Spot;
 using CryptoExchange.Net.CommonObjects;
 
@@ -31,33 +30,19 @@ namespace WebAPITutorial.Exchanges
 		{
 			"BTCRUB",
 			"ETHRUB",
-			"XRPRUB",
 			"BNBRUB",
-			"BUSDRUB",
-			"USDTRUB",
+			"XRPRUB",
 			"LTCRUB",
-			"ADARUB",
-			"SHIBRUB",
 			"MATICRUB",
-			"DOTRUB",
 			"SOLRUB",
-			"ICPRUB",
-			"TRURUB",
-			"WAVESRUB",
-			"ARPARUB",
-			"FTMRUB",
-			"NURUB",
-			"ALGORUB",
-			"NEORUB",
-			"NEARRUB",
 			"ARBRUB"
 		};
 
 		BinanceClient client = new BinanceClient();
 
-		protected override IEnumerable<Product> GetTickersRUB()
+		public override async Task<IEnumerable<Product>> GetTickersRUBAsync()
 		{
-			var result = client.SpotApi.ExchangeData.GetTickersAsync(pairsRUB).Result;
+			var result = await client.SpotApi.ExchangeData.GetTickersAsync(pairsRUB);
 			List<Product> products = new List<Product>();
 
 			if (result.Success)
@@ -67,9 +52,9 @@ namespace WebAPITutorial.Exchanges
 			return products;
 		}
 
-		protected override IEnumerable<Product> GetTickersUSDT() //340 пар c долларом
+		public override async Task<IEnumerable<Product>> GetTickersUSDTAsync()
 		{
-			var result = client.SpotApi.ExchangeData.GetTickersAsync(pairsUSDT).Result;
+			var result = await client.SpotApi.ExchangeData.GetTickersAsync(pairsUSDT);
 			List<Product> products = new List<Product>();
 
 			if (result.Success)
@@ -79,25 +64,24 @@ namespace WebAPITutorial.Exchanges
 			return products;
 		}
 
-
-		protected override List<Kline> GetKlinesCommonSpotClient(string? symbol, int intervalMin, int periodOfHours)
+		public override async Task<List<Kline>> GetKlinesCommonSpotClientAsync(string symbol, int intervalMin, int periodOfHours)
 		{
-			if (symbol == null) return new List<Kline>();
+			if (!pairsUSDT.Contains(symbol) && !pairsRUB.Contains(symbol)) return new List<Kline>();
 			List<Kline> klines = new List<Kline>();
 			int minutes = intervalMin % 60;
 			int hours = (intervalMin - minutes) / 60;
 			TimeSpan timeSpan = new TimeSpan(hours, minutes, 0);
-			var result = client.SpotApi.CommonSpotClient.GetKlinesAsync(symbol, timeSpan, DateTime.Now.AddHours(-1 * periodOfHours), DateTime.Now).Result;
+			var result = await client.SpotApi.CommonSpotClient.GetKlinesAsync(symbol, timeSpan, DateTime.Now.AddHours(-1 * periodOfHours), DateTime.Now);
 			if (result.Success && result.Data.Count() > 0)
 				klines = result.Data.ToList();
 			return klines;
 		}
 
-		protected override IEnumerable<IBinanceKline> GetKlinesExchangeData(string? symbol, int periodOfHours)
+		public override async Task<List<BinanceSpotKline>> GetKlinesExchangeDataAsync<BinanceSpotKline>(string symbol, int periodOfHours)
 		{
-			if (symbol == null) return new List<IBinanceKline> { new BinanceSpotKline() };
-			var result = client.SpotApi.ExchangeData.GetKlinesAsync(symbol, Binance.Net.Enums.KlineInterval.OneHour, DateTime.Now.AddHours(-1 * periodOfHours), DateTime.Now).Result;
-			return result.Data;
+			if (!pairsUSDT.Contains(symbol) && !pairsRUB.Contains(symbol)) return new List<BinanceSpotKline>();
+			var result = await client.SpotApi.ExchangeData.GetKlinesAsync(symbol, Binance.Net.Enums.KlineInterval.OneHour, DateTime.Now.AddHours(-1 * periodOfHours), DateTime.Now);
+			return (List<BinanceSpotKline>)result.Data;
 		}
 
 		protected override Product ToProduct(object product, decimal usdCurrency = 1)
@@ -110,8 +94,8 @@ namespace WebAPITutorial.Exchanges
 			p.LastPrice = binanceProduct.LastPrice * usdCurrency;
 			p.BaseVolume = binanceProduct.Volume;
 			p.QuoteVolume = binanceProduct.QuoteVolume;
-			p.Volatility = GetVolatility(binanceProduct);		//binanceProduct.LowPrice > 0 ? (binanceProduct.HighPrice - binanceProduct.LowPrice) / binanceProduct.LowPrice : 0;
-			p.Liquidity = GetLiquidity(binanceProduct.Symbol);	//binanceProduct.Volume > 0 ? binanceProduct.QuoteVolume / binanceProduct.Volume : 0;
+			p.Volatility = GetVolatility(binanceProduct);
+			p.Liquidity = GetLiquidity(binanceProduct.Symbol).Result;
 			p.PriceChange = binanceProduct.PriceChange;
 			p.PriceChangePercent = binanceProduct.PriceChangePercent;
 			return p;
@@ -126,9 +110,9 @@ namespace WebAPITutorial.Exchanges
 				binanceProduct.TotalTrades);
 			return Double.IsNormal(result) ? Math.Round(result, 5) : 0;
 		}
-		private decimal GetLiquidity(string symbol)
+		private async Task<decimal> GetLiquidity(string symbol)
 		{
-			var result = client.SpotApi.ExchangeData.GetOrderBookAsync(symbol, 10).Result;
+			var result = await client.SpotApi.ExchangeData.GetOrderBookAsync(symbol, 10);
 			decimal asks = 0;
 			decimal bids = 0;
 

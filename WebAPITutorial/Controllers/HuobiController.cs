@@ -10,37 +10,44 @@ namespace WebAPITutorial.Controllers
 	public class HuobiController : ControllerBase
 	{
 		private readonly HuobiExchange _exchange;
-		public HuobiController(HuobiExchange exchange)
+		private readonly ExchangeControllerHelper _helper;
+		public HuobiController(HuobiExchange exchange, ExchangeControllerHelper helper)
 		{
 			_exchange = exchange;
+			_helper = helper;
 		}
 
 		[HttpGet]
-		public async Task<IEnumerable<Product>> GetTickersRUBs()
+		[ProducesResponseType(StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(StatusCodes.Status200OK)]
+		public async Task<ActionResult<IEnumerable<Product>>> GetTickersUSDTs()
 		{
-			var result = await _exchange.GetListRUBAsync();
-			return result;
+			return await _helper.GetTickersUSDTAsync(_exchange.GetTickersUSDTAsync);
 		}
 
 		[HttpGet]
-		public async Task<IEnumerable<Product>> GetTickersUSDTs()
+		[ProducesResponseType(StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(StatusCodes.Status200OK)]
+		public async Task<ActionResult<IEnumerable<Product>>> GetTickersRUBs()
 		{
-			var result = await _exchange.GetListUSDTAsync();
-			return result;
+			return await _helper.GetTickersRUBAsync(_exchange.GetTickersRUBAsync);
 		}
+
 
 		[HttpGet("{symbol}/{periodOfHours}")]
-		public async Task<IEnumerable<HuobiKline>> GetKlinesExcData(string symbol, int periodOfHours)
+		[ProducesResponseType(StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(StatusCodes.Status200OK)]
+		public async Task<ActionResult<List<HuobiKline>>> GetKlinesExcData(string symbol, int periodOfHours)
 		{
-			var result = await _exchange.GetKlinesExchangeDataAsync(symbol, periodOfHours);
-			return (IEnumerable<HuobiKline>)result;
+			return await _helper.GetKlinesExcDataAsync(symbol, periodOfHours, _exchange.GetKlinesExchangeDataAsync<HuobiKline>);
 		}
 
 		[HttpGet("{symbol}/{intervalMin}/{periodOfHours}")]
-		public async Task<List<Kline>> GetKlinesComSpotCl(string symbol, int intervalMin, int periodOfHours)
+		[ProducesResponseType(StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(StatusCodes.Status200OK)]
+		public async Task<ActionResult<List<Kline>>> GetKlinesComSpotCl(string symbol, int intervalMin, int periodOfHours)
 		{
-			var result = await _exchange.GetKlinesCommonSpotClientAsync(symbol, intervalMin, periodOfHours);
-			return result;
+			return await _helper.GetKlinesComSpotClAsync(symbol, intervalMin, periodOfHours, _exchange.GetKlinesCommonSpotClientAsync);
 		}
 	}
 }

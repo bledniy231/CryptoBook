@@ -1,4 +1,4 @@
-﻿using Binance.Net.Interfaces;
+﻿using Binance.Net.Objects.Models.Spot;
 using CryptoExchange.Net.CommonObjects;
 using Microsoft.AspNetCore.Mvc;
 using WebAPITutorial.Exchanges;
@@ -10,36 +10,43 @@ namespace WebAPITutorial.Controllers
 	public class BinanceController : ControllerBase
 	{
 		private readonly BinanceExchange _exchange;
-		public BinanceController(BinanceExchange exchange)
+		private readonly ExchangeControllerHelper _helper;
+		public BinanceController(BinanceExchange exchange, ExchangeControllerHelper helper)
 		{
 			_exchange = exchange;
-		}
-		[HttpGet]
-		public async Task<IEnumerable<Product>> GetTickersRUBs()
-		{
-			var result = await _exchange.GetListRUBAsync();
-			return result;
+			_helper = helper;
 		}
 
 		[HttpGet]
-		public async Task<IEnumerable<Product>> GetTickersUSDTs()
+		[ProducesResponseType(StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(StatusCodes.Status200OK)]
+		public async Task<ActionResult<IEnumerable<Product>>> GetTickersUSDTs()
 		{
-			var result = await _exchange.GetListUSDTAsync();
-			return result;
+			return await _helper.GetTickersUSDTAsync(_exchange.GetTickersUSDTAsync);
+		}
+
+		[HttpGet]
+		[ProducesResponseType(StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(StatusCodes.Status200OK)]
+		public async Task<ActionResult<IEnumerable<Product>>> GetTickersRUBs()
+		{
+			return await _helper.GetTickersRUBAsync(_exchange.GetTickersRUBAsync);
 		}
 
 		[HttpGet("{symbol}/{periodOfHours}")]
-		public async Task<IEnumerable<IBinanceKline>> GetKlinesExcData(string symbol, int periodOfHours)
+		[ProducesResponseType(StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(StatusCodes.Status200OK)]
+		public async Task<ActionResult<List<BinanceSpotKline>>> GetKlinesExcData(string symbol, int periodOfHours)
 		{
-			var result = await _exchange.GetKlinesExchangeDataAsync(symbol, periodOfHours);
-			return (IEnumerable<IBinanceKline>)result;
+			return await _helper.GetKlinesExcDataAsync(symbol, periodOfHours, _exchange.GetKlinesExchangeDataAsync<BinanceSpotKline>);
 		}
 
 		[HttpGet("{symbol}/{intervalMin}/{periodOfHours}")]
-		public async Task<List<Kline>> GetKlinesComSpotCl(string symbol, int intervalMin, int periodOfHours)
+		[ProducesResponseType(StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(StatusCodes.Status200OK)]
+		public async Task<ActionResult<List<Kline>>> GetKlinesComSpotCl(string symbol, int intervalMin, int periodOfHours)
 		{
-			var result = await _exchange.GetKlinesCommonSpotClientAsync(symbol, intervalMin, periodOfHours);
-			return result;
+			return await _helper.GetKlinesComSpotClAsync(symbol, intervalMin, periodOfHours, _exchange.GetKlinesCommonSpotClientAsync);
 		}
 	}
 

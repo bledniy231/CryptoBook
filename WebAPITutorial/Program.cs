@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using WebAPITutorial.Controllers;
 using WebAPITutorial.DailyTask;
 using WebAPITutorial.DBContext;
 using WebAPITutorial.DollarCurrency;
@@ -20,6 +21,7 @@ builder.Services.AddSingleton<IDollarCurrency, GetDollarCurrencyXML>();
 builder.Services.AddSingleton<BinanceExchange>();
 builder.Services.AddSingleton<KucoinExchange>();
 builder.Services.AddSingleton<HuobiExchange>();
+builder.Services.AddSingleton<ExchangeControllerHelper>();
 builder.Services.AddDbContext<KucoinVolContext>(options =>
 {
 	options.UseNpgsql(builder.Configuration.GetConnectionString("PostgreSqlString"));
