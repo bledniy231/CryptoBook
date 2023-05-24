@@ -1,10 +1,8 @@
 ﻿using Kucoin.Net.Objects.Models.Spot;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using WebAPITutorial.DBContext;
+using WebAPITutorial.DBContexts;
 using WebAPITutorial.Exchanges;
 using WebAPITutorial.Models;
-using WebAPITutorial.Repos;
 using static WebAPITutorial.Models.KucoinVolatilityEntity;
 
 namespace WebAPITutorial.DailyTask

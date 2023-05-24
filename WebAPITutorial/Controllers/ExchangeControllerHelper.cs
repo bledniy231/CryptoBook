@@ -25,7 +25,8 @@ namespace WebAPITutorial.Controllers
 				return BadRequest();
 		}
 
-		public async Task<ActionResult<List<T>>> GetKlinesExcDataAsync<T>(string symbol, int periodOfHours, Func<string, int, Task<List<T>>> getKlinesExDataAsync)
+		public async Task<ActionResult<List<T>>> GetKlinesExcDataAsync<T>(string symbol, int periodOfHours, 
+			Func<string, int, Task<List<T>>> getKlinesExDataAsync)
 		{
 			if (periodOfHours < 0)
 				return BadRequest("Period of hours less than 0");

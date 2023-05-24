@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using static WebAPITutorial.Models.KucoinVolatilityEntity;
 
-namespace WebAPITutorial.DBContext
+namespace WebAPITutorial.DBContexts
 {
 	public class KucoinVolContext : DbContext
 	{

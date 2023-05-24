@@ -14,8 +14,8 @@
 		protected override async Task ExecuteAsync(CancellationToken stoppingToken)
 		{
 			currentTime = DateTime.Now;
-			DateTime startTime = currentTime.Date.AddHours(0); // 00:00
-			DateTime endTime = currentTime.Date.AddHours(3); // 01:00
+			DateTime startTime = currentTime.Date.AddHours(23); // 00:00
+			DateTime endTime = currentTime.Date.AddHours(24); // 01:00
 
 			if (currentTime >= startTime && currentTime < endTime)
 			{
