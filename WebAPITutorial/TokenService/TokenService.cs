@@ -4,11 +4,11 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using WebAPITutorial.Models;
+using WebAPITutorial.Models.Identity;
 
 namespace WebAPITutorial.TokenService
 {
-	public class TokenService : ITokenService
+    public class TokenService : ITokenService
 	{
 		private readonly IConfiguration _config;
 		public TokenService(IConfiguration config)
@@ -16,7 +16,7 @@ namespace WebAPITutorial.TokenService
 			_config = config;
 		}
 
-		public string CreateAccessToken(UserModel user, List<IdentityRole<long>> roles)
+		public string CreateAccessToken(User user, List<IdentityRole<long>> roles)
 		{
 			JwtSecurityToken token = CreateJwtToken(CreateClaims(user, roles));
 			JwtSecurityTokenHandler tokenHandler = new JwtSecurityTokenHandler();
@@ -67,7 +67,7 @@ namespace WebAPITutorial.TokenService
 				signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256));
 		}
 
-		private List<Claim> CreateClaims(UserModel user, List<IdentityRole<long>> roles)
+		private List<Claim> CreateClaims(User user, List<IdentityRole<long>> roles)
 		{
 			return new List<Claim>
 			{

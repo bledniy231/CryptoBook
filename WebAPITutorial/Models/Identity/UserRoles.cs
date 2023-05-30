@@ -1,9 +1,9 @@
 ﻿namespace WebAPITutorial.Models.Identity
 {
-	public record class UserRoles
+	public static class UserRoles
 	{
-		public static string Student { get; } = "Student";
-		public static string Teacher { get; } = "Teacher";
-		public static string Admin { get; } = "Admin";
+		public const string Student = "Student";
+		public const string Teacher = "Teacher";
+		public const string Admin = "Admin";
 	}
 }

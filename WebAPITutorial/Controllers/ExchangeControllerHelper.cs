@@ -5,9 +5,19 @@ namespace WebAPITutorial.Controllers
 {
 	public class ExchangeControllerHelper : ControllerBase
 	{
-		public async Task<ActionResult<IEnumerable<Product>>> GetTickersUSDTAsync(Func<Task<IEnumerable<Product>>> getTickersUSDTAsync)
+		public async Task<ActionResult<IEnumerable<Product>>> GetTickersAsync(Func<Task<IEnumerable<Product>>> getTickersAsync)
 		{
-			Task<IEnumerable<Product>> task = getTickersUSDTAsync();
+			Task<IEnumerable<Product>> task = getTickersAsync();
+			var result = await task;
+			if (task.IsCompletedSuccessfully)
+				return Ok(result);
+			else
+				return BadRequest();
+		}
+
+		public async Task<ActionResult<IEnumerable<Product>>> GetExactTickerAsync(string symbol, Func<string, Task<Product>> getExactTickerAsync)
+		{
+			Task<Product> task = getExactTickerAsync(symbol);
 			var result = await task;
 			if (task.IsCompletedSuccessfully)
 				return Ok(result);

@@ -12,8 +12,8 @@ using WebAPITutorial.DBContexts;
 namespace WebAPITutorial.Migrations.User
 {
     [DbContext(typeof(UserContext))]
-    [Migration("20230524200413_AddJWTAuth_1")]
-    partial class AddJWTAuth_1
+    [Migration("20230529184012_user_with_lessons")]
+    partial class user_with_lessons
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -21,6 +21,9 @@ namespace WebAPITutorial.Migrations.User
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "7.0.5")
+                .HasAnnotation("Proxies:ChangeTracking", false)
+                .HasAnnotation("Proxies:CheckEquality", false)
+                .HasAnnotation("Proxies:LazyLoading", true)
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -157,7 +160,7 @@ namespace WebAPITutorial.Migrations.User
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("WebAPITutorial.Models.UserModel", b =>
+            modelBuilder.Entity("WebAPITutorial.Models.Identity.User", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -170,6 +173,9 @@ namespace WebAPITutorial.Migrations.User
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Description")
                         .HasColumnType("text");
 
                     b.Property<string>("Email")
@@ -240,6 +246,152 @@ namespace WebAPITutorial.Migrations.User
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("WebAPITutorial.Models.Tutorial.AnsweredQuestion", b =>
+                {
+                    b.Property<int>("AnsweredQuestionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AnsweredQuestionId"));
+
+                    b.Property<double>("AccuracyOfAnswer")
+                        .HasColumnType("double precision");
+
+                    b.Property<int>("ComplitedTestId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("GivenAnswer")
+                        .HasColumnType("text");
+
+                    b.Property<int>("QuestionId")
+                        .HasColumnType("integer");
+
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("AnsweredQuestionId");
+
+                    b.HasIndex("ComplitedTestId");
+
+                    b.HasIndex("QuestionId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("AnsweredQuestions");
+                });
+
+            modelBuilder.Entity("WebAPITutorial.Models.Tutorial.ComplitedTest", b =>
+                {
+                    b.Property<int>("ComplitedTestId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ComplitedTestId"));
+
+                    b.Property<DateTime>("ComplitedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("LessonId")
+                        .HasColumnType("integer");
+
+                    b.Property<double>("Mark")
+                        .HasColumnType("double precision");
+
+                    b.Property<long>("UserId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("ComplitedTestId");
+
+                    b.HasIndex("LessonId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ComplitedTests", (string)null);
+                });
+
+            modelBuilder.Entity("WebAPITutorial.Models.Tutorial.ImageURL", b =>
+                {
+                    b.Property<int>("ImageURLId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ImageURLId"));
+
+                    b.Property<int>("LessonId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("URL")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("ImageURLId");
+
+                    b.HasIndex("LessonId");
+
+                    b.ToTable("ImageURLs", (string)null);
+                });
+
+            modelBuilder.Entity("WebAPITutorial.Models.Tutorial.Lesson", b =>
+                {
+                    b.Property<int>("LessonId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("LessonId"));
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("LessonNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("LessonId");
+
+                    b.ToTable("Lessons", (string)null);
+                });
+
+            modelBuilder.Entity("WebAPITutorial.Models.Tutorial.Question", b =>
+                {
+                    b.Property<int>("QuestionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("QuestionId"));
+
+                    b.Property<bool>("IsStringAnswer")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("LessonId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PossibleAnswers")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("QuestionText")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("RightAnswers")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("QuestionId");
+
+                    b.HasIndex("LessonId");
+
+                    b.ToTable("Questions", (string)null);
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<long>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole<long>", null)
@@ -251,7 +403,7 @@ namespace WebAPITutorial.Migrations.User
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<long>", b =>
                 {
-                    b.HasOne("WebAPITutorial.Models.UserModel", null)
+                    b.HasOne("WebAPITutorial.Models.Identity.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -260,7 +412,7 @@ namespace WebAPITutorial.Migrations.User
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<long>", b =>
                 {
-                    b.HasOne("WebAPITutorial.Models.UserModel", null)
+                    b.HasOne("WebAPITutorial.Models.Identity.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -275,7 +427,7 @@ namespace WebAPITutorial.Migrations.User
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("WebAPITutorial.Models.UserModel", null)
+                    b.HasOne("WebAPITutorial.Models.Identity.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -284,11 +436,96 @@ namespace WebAPITutorial.Migrations.User
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<long>", b =>
                 {
-                    b.HasOne("WebAPITutorial.Models.UserModel", null)
+                    b.HasOne("WebAPITutorial.Models.Identity.User", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("WebAPITutorial.Models.Tutorial.AnsweredQuestion", b =>
+                {
+                    b.HasOne("WebAPITutorial.Models.Tutorial.ComplitedTest", "ComplitedTest")
+                        .WithMany("AnsweredQuestions")
+                        .HasForeignKey("ComplitedTestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("WebAPITutorial.Models.Tutorial.Question", "Question")
+                        .WithMany()
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("WebAPITutorial.Models.Identity.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ComplitedTest");
+
+                    b.Navigation("Question");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("WebAPITutorial.Models.Tutorial.ComplitedTest", b =>
+                {
+                    b.HasOne("WebAPITutorial.Models.Tutorial.Lesson", "Lesson")
+                        .WithMany()
+                        .HasForeignKey("LessonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("WebAPITutorial.Models.Identity.User", "User")
+                        .WithMany("ComplitedTests")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Lesson");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("WebAPITutorial.Models.Tutorial.ImageURL", b =>
+                {
+                    b.HasOne("WebAPITutorial.Models.Tutorial.Lesson", "Lesson")
+                        .WithMany("ImageURLs")
+                        .HasForeignKey("LessonId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .IsRequired();
+
+                    b.Navigation("Lesson");
+                });
+
+            modelBuilder.Entity("WebAPITutorial.Models.Tutorial.Question", b =>
+                {
+                    b.HasOne("WebAPITutorial.Models.Tutorial.Lesson", "Lesson")
+                        .WithMany("Questions")
+                        .HasForeignKey("LessonId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .IsRequired();
+
+                    b.Navigation("Lesson");
+                });
+
+            modelBuilder.Entity("WebAPITutorial.Models.Identity.User", b =>
+                {
+                    b.Navigation("ComplitedTests");
+                });
+
+            modelBuilder.Entity("WebAPITutorial.Models.Tutorial.ComplitedTest", b =>
+                {
+                    b.Navigation("AnsweredQuestions");
+                });
+
+            modelBuilder.Entity("WebAPITutorial.Models.Tutorial.Lesson", b =>
+                {
+                    b.Navigation("ImageURLs");
+
+                    b.Navigation("Questions");
                 });
 #pragma warning restore 612, 618
         }

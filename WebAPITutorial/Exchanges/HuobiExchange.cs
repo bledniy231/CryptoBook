@@ -38,7 +38,7 @@ namespace WebAPITutorial.Exchanges
 
 		HuobiClient client = new HuobiClient();
 
-		public override async Task<IEnumerable<Product>> GetTickersUSDTAsync()
+		public override async Task<IEnumerable<Product>> GetTickersAsync()
 		{
 			var result = await client.SpotApi.ExchangeData.GetTickersAsync();
 			List<Product> products = new List<Product>();
@@ -48,6 +48,16 @@ namespace WebAPITutorial.Exchanges
 			//TODO: Сохранение в базу данных
 			idProduct = 0;
 			return products;
+		}
+
+		public override async Task<Product> GetExactTickerAsync(string symbol)
+		{
+			var result = await client.SpotApi.ExchangeData.GetTickerAsync(symbol);
+
+			if (result.Success)
+				return ToProduct(result.Data);
+
+			return new Product();
 		}
 
 		public override async Task<IEnumerable<Product>> GetTickersRUBAsync()

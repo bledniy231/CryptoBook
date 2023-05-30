@@ -52,7 +52,17 @@ namespace WebAPITutorial.Exchanges
 			return products;
 		}
 
-		public override async Task<IEnumerable<Product>> GetTickersUSDTAsync()
+		public override async Task<Product> GetExactTickerAsync(string symbol)
+		{
+			var result = await client.SpotApi.ExchangeData.GetTickerAsync(symbol);
+
+			if (result.Success)
+				return ToProduct(result.Data);
+
+			return new Product();
+		}
+
+		public override async Task<IEnumerable<Product>> GetTickersAsync()
 		{
 			var result = await client.SpotApi.ExchangeData.GetTickersAsync(pairsUSDT);
 			List<Product> products = new List<Product>();

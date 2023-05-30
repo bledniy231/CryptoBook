@@ -4,24 +4,36 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Newtonsoft.Json.Serialization;
 using WebAPITutorial.Controllers;
 using WebAPITutorial.DailyTask;
 using WebAPITutorial.DBContexts;
 using WebAPITutorial.DollarCurrency;
 using WebAPITutorial.Exchanges;
-using WebAPITutorial.Models;
+using WebAPITutorial.Models.Identity;
 using WebAPITutorial.TokenService;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddNewtonsoftJson(options =>
+{
+	options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+	options.SerializerSettings.ContractResolver = new DefaultContractResolver
+	{
+		IgnoreSerializableAttribute = true,
+		IgnoreSerializableInterface = true,
+		IgnoreShouldSerializeMembers = true
+	};
+});
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddCors();
 builder.Services.AddSwaggerGen(options =>
 {
 	options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "CryptoBook", Version = "v0.4"});
+
 
 	options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
 	{
@@ -58,15 +70,15 @@ builder.Services.AddSingleton<BinanceExchange>();
 builder.Services.AddSingleton<KucoinExchange>();
 builder.Services.AddSingleton<HuobiExchange>();
 builder.Services.AddSingleton<ExchangeControllerHelper>();
-
+string? connectionString = builder.Configuration.GetConnectionString("PostgreSqlString");
 builder.Services.AddDbContext<KucoinVolContext>(options =>
 {
-	options.UseNpgsql(builder.Configuration.GetConnectionString("PostgreSqlString"));
+	options.UseNpgsql(connectionString);
 });
 
 builder.Services.AddDbContext<UserContext>(options =>
 {
-	options.UseNpgsql(builder.Configuration.GetConnectionString("PostgreSqlString"));
+	options.UseNpgsql(connectionString);
 });
 
 builder.Services.AddAuthentication(options =>
@@ -95,11 +107,14 @@ builder.Services.AddAuthorization(options =>
 		.Build();
 });
 
-builder.Services.AddIdentity<UserModel, IdentityRole<long>>()
+builder.Services.AddIdentity<User, IdentityRole<long>>(options =>
+{
+	options.User.RequireUniqueEmail = true;
+})
 	.AddEntityFrameworkStores<UserContext>()
 	.AddDefaultTokenProviders()
-	.AddUserManager<UserManager<UserModel>>()
-	.AddSignInManager<SignInManager<UserModel>>();
+	.AddUserManager<UserManager<User>>()
+	.AddSignInManager<SignInManager<User>>();
 
 
 
@@ -112,7 +127,15 @@ if (app.Environment.IsDevelopment())
 	app.UseDeveloperExceptionPage();
 }
 
+app.UseStaticFiles();
+
 app.UseHttpsRedirection();
+
+app.UseCors(builder =>
+		builder.AllowAnyOrigin()
+			   .AllowAnyMethod()
+			   .AllowAnyHeader()
+	);
 
 app.UseAuthentication();
 app.UseAuthorization();

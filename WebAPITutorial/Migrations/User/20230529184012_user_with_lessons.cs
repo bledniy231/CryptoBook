@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace WebAPITutorial.Migrations.User
 {
     /// <inheritdoc />
-    public partial class AddJWTAuth_1 : Migration
+    public partial class user_with_lessons : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -35,6 +35,7 @@ namespace WebAPITutorial.Migrations.User
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     FirstName = table.Column<string>(type: "text", nullable: false),
                     SecondName = table.Column<string>(type: "text", nullable: true),
+                    Description = table.Column<string>(type: "text", nullable: true),
                     ImageLink = table.Column<string>(type: "text", nullable: true),
                     RefreshToken = table.Column<string>(type: "text", nullable: true),
                     RefreshTokenExpiryTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -56,6 +57,22 @@ namespace WebAPITutorial.Migrations.User
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Lessons",
+                columns: table => new
+                {
+                    LessonId = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    LessonNumber = table.Column<int>(type: "integer", nullable: false),
+                    Title = table.Column<string>(type: "text", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: false),
+                    Text = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Lessons", x => x.LessonId);
                 });
 
             migrationBuilder.CreateTable(
@@ -164,6 +181,127 @@ namespace WebAPITutorial.Migrations.User
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "ComplitedTests",
+                columns: table => new
+                {
+                    ComplitedTestId = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    ComplitedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Mark = table.Column<double>(type: "double precision", nullable: false),
+                    UserId = table.Column<long>(type: "bigint", nullable: false),
+                    LessonId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ComplitedTests", x => x.ComplitedTestId);
+                    table.ForeignKey(
+                        name: "FK_ComplitedTests_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ComplitedTests_Lessons_LessonId",
+                        column: x => x.LessonId,
+                        principalTable: "Lessons",
+                        principalColumn: "LessonId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ImageURLs",
+                columns: table => new
+                {
+                    ImageURLId = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    URL = table.Column<string>(type: "text", nullable: false),
+                    LessonId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ImageURLs", x => x.ImageURLId);
+                    table.ForeignKey(
+                        name: "FK_ImageURLs_Lessons_LessonId",
+                        column: x => x.LessonId,
+                        principalTable: "Lessons",
+                        principalColumn: "LessonId",
+                        onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Questions",
+                columns: table => new
+                {
+                    QuestionId = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    QuestionText = table.Column<string>(type: "text", nullable: false),
+                    PossibleAnswers = table.Column<string>(type: "text", nullable: false),
+                    RightAnswers = table.Column<string>(type: "text", nullable: false),
+                    IsStringAnswer = table.Column<bool>(type: "boolean", nullable: false),
+                    LessonId = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Questions", x => x.QuestionId);
+                    table.ForeignKey(
+                        name: "FK_Questions_Lessons_LessonId",
+                        column: x => x.LessonId,
+                        principalTable: "Lessons",
+                        principalColumn: "LessonId",
+                        onDelete: ReferentialAction.SetNull);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AnsweredQuestions",
+                columns: table => new
+                {
+                    AnsweredQuestionId = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    GivenAnswer = table.Column<string>(type: "text", nullable: true),
+                    AccuracyOfAnswer = table.Column<double>(type: "double precision", nullable: false),
+                    QuestionId = table.Column<int>(type: "integer", nullable: false),
+                    ComplitedTestId = table.Column<int>(type: "integer", nullable: false),
+                    UserId = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AnsweredQuestions", x => x.AnsweredQuestionId);
+                    table.ForeignKey(
+                        name: "FK_AnsweredQuestions_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AnsweredQuestions_ComplitedTests_ComplitedTestId",
+                        column: x => x.ComplitedTestId,
+                        principalTable: "ComplitedTests",
+                        principalColumn: "ComplitedTestId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AnsweredQuestions_Questions_QuestionId",
+                        column: x => x.QuestionId,
+                        principalTable: "Questions",
+                        principalColumn: "QuestionId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AnsweredQuestions_ComplitedTestId",
+                table: "AnsweredQuestions",
+                column: "ComplitedTestId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AnsweredQuestions_QuestionId",
+                table: "AnsweredQuestions",
+                column: "QuestionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AnsweredQuestions_UserId",
+                table: "AnsweredQuestions",
+                column: "UserId");
+
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
                 table: "AspNetRoleClaims",
@@ -200,11 +338,34 @@ namespace WebAPITutorial.Migrations.User
                 table: "AspNetUsers",
                 column: "NormalizedUserName",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ComplitedTests_LessonId",
+                table: "ComplitedTests",
+                column: "LessonId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ComplitedTests_UserId",
+                table: "ComplitedTests",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ImageURLs_LessonId",
+                table: "ImageURLs",
+                column: "LessonId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Questions_LessonId",
+                table: "Questions",
+                column: "LessonId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "AnsweredQuestions");
+
             migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 
@@ -221,10 +382,22 @@ namespace WebAPITutorial.Migrations.User
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
+                name: "ImageURLs");
+
+            migrationBuilder.DropTable(
+                name: "ComplitedTests");
+
+            migrationBuilder.DropTable(
+                name: "Questions");
+
+            migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
+
+            migrationBuilder.DropTable(
+                name: "Lessons");
         }
     }
 }

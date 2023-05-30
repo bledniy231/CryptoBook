@@ -6,7 +6,7 @@ using WebAPITutorial.Exchanges;
 namespace WebAPITutorial.Controllers
 {
 	[ApiController]
-	[Route("[controller]/[action]")]
+	[Route("api/[controller]/[action]")]
 	public class KucoinController : ControllerBase
 	{
 		private readonly KucoinExchange _exchange;
@@ -20,9 +20,17 @@ namespace WebAPITutorial.Controllers
 		[HttpGet]
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
 		[ProducesResponseType(StatusCodes.Status200OK)]
-		public async Task<ActionResult<IEnumerable<Product>>> GetTickersUSDTs()
+		public async Task<ActionResult<IEnumerable<Product>>> GetTickers()
 		{
-			return await _helper.GetTickersUSDTAsync(_exchange.GetTickersUSDTAsync);
+			return await _helper.GetTickersAsync(_exchange.GetTickersAsync);
+		}
+
+		[HttpGet("{symbol}")]
+		[ProducesResponseType(StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(StatusCodes.Status200OK)]
+		public async Task<ActionResult<IEnumerable<Product>>> GetExactTicker(string symbol)
+		{
+			return await _helper.GetExactTickerAsync(symbol, _exchange.GetExactTickerAsync);
 		}
 
 		[HttpGet]
@@ -49,17 +57,4 @@ namespace WebAPITutorial.Controllers
 			return await _helper.GetKlinesComSpotClAsync(symbol, intervalMin, periodOfHours, _exchange.GetKlinesCommonSpotClientAsync);
 		}
 	}
-
-	/*[ApiController]
-	[Route("commonSpotClientKucoin/[controller]")]
-	public class GetKlinesCSCKucoinController : ControllerBase
-	{
-		KucoinExchange exchange = new KucoinExchange();
-		[HttpGet("{symbol}/{intervalMin}/{periodOfHours}")]
-		public async Task<List<Kline>> Get(string symbol, int intervalMin, int periodOfHours)
-		{
-			var result = await exchange.GetKlinesCommonSpotClientAsync(symbol, intervalMin, periodOfHours);
-			return result;
-		}
-	}*/
 }
