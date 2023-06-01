@@ -1,16 +1,16 @@
 ﻿namespace WebAPITutorial.DailyTask
 {
-	public class DollarCurrencyDailyTaskService : BackgroundService
+	public class DailyTasksService : BackgroundService
 	{
-		private readonly DollarCurrencyDailyTask _task;
+		private readonly IEnumerable<IDailyTask> _tasks;
 		private readonly TimeSpan interval = TimeSpan.FromDays(1);
 		private DateTime lastRunTime;
 		private bool isFirstTime = true;
 		private string path = "DollarCurrency\\ActualDollarCurrency.txt";
 		
-		public DollarCurrencyDailyTaskService(DollarCurrencyDailyTask task)
+		public DailyTasksService(IEnumerable<IDailyTask> tasks)
 		{
-			_task = task;
+			_tasks = tasks;
 			if (File.Exists(path))
 			{
 				string? dtstr = File.ReadLines(path).ElementAtOrDefault(1);
@@ -34,6 +34,9 @@
 				if (isFirstTime)
 				{
 					isFirstTime = false;
+					_tasks.FirstOrDefault(t => t.GetType()
+						.Equals(typeof(KucoinVolatilityDailyTask)))?
+						.DoTaskAsync();
 				}
 				else
 				{
@@ -44,8 +47,9 @@
 				if (DateTime.Now - lastRunTime >= interval)
 				{
 					lastRunTime = DateTime.Now;
-					await _task.DoTaskAsync();
-					await File.AppendAllTextAsync(path, lastRunTime.ToString());
+					foreach (var _task in _tasks)
+						await _task.DoTaskAsync();
+					await File.AppendAllTextAsync(path, lastRunTime.ToString(), stoppingToken);
 				}
 			}
 		}

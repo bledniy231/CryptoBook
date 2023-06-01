@@ -6,7 +6,18 @@ namespace WebAPITutorial.Exchanges
 {
 	public class BinanceExchange : BaseExchange
 	{
-		public BinanceExchange() { }
+		public BinanceExchange() 
+		{
+			string path = "DollarCurrency\\ActualDollarCurrency.txt";
+			string? currstr = File.ReadLines(path).ElementAtOrDefault(0);
+
+			if (currstr != null && Decimal.TryParse(currstr, out usdCurrency))
+			{
+				Console.WriteLine($"Read currency in BinanceExchange success: {usdCurrency}");
+			}
+		}
+
+		private decimal usdCurrency;
 
 		private int idProduct = 0;
 		public override int id => 1;
@@ -26,38 +37,17 @@ namespace WebAPITutorial.Exchanges
 			"ARBUSDT"
 		};
 
-		private readonly List<string> pairsRUB = new List<string>()
-		{
-			"BTCRUB",
-			"ETHRUB",
-			"BNBRUB",
-			"XRPRUB",
-			"LTCRUB",
-			"MATICRUB",
-			"SOLRUB",
-			"ARBRUB"
-		};
-
 		BinanceClient client = new BinanceClient();
 
-		public override async Task<IEnumerable<Product>> GetTickersRUBAsync()
-		{
-			var result = await client.SpotApi.ExchangeData.GetTickersAsync(pairsRUB);
-			List<Product> products = new List<Product>();
-
-			if (result.Success)
-				result.Data.ToList().ForEach(p => products.Add(ToProduct(p)));
-			//TODO: Сохранение в базу данных
-			idProduct = 0;
-			return products;
-		}
-
-		public override async Task<Product> GetExactTickerAsync(string symbol)
+		public override async Task<Product> GetExactTickerAsync(string symbol, bool isRub)
 		{
 			var result = await client.SpotApi.ExchangeData.GetTickerAsync(symbol);
 
 			if (result.Success)
-				return ToProduct(result.Data);
+				if (!isRub)
+					return ToProduct(result.Data);
+				else
+					return ToProduct(result.Data, usdCurrency);
 
 			return new Product();
 		}
@@ -69,14 +59,24 @@ namespace WebAPITutorial.Exchanges
 
 			if (result.Success)
 				result.Data.ToList().ForEach(p => products.Add(ToProduct(p)));
-			//TODO: Сохранение в базу данных
+			idProduct = 0;
+			return products;
+		}
+
+		public override async Task<IEnumerable<Product>> GetTickersRUBAsync()
+		{
+			var result = await client.SpotApi.ExchangeData.GetTickersAsync(pairsUSDT);
+			List<Product> products = new List<Product>();
+
+			if (result.Success)
+				result.Data.ToList().ForEach(p => products.Add(ToProduct(p, usdCurrency)));
 			idProduct = 0;
 			return products;
 		}
 
 		public override async Task<List<Kline>> GetKlinesCommonSpotClientAsync(string symbol, int intervalMin, int periodOfHours)
 		{
-			if (!pairsUSDT.Contains(symbol) && !pairsRUB.Contains(symbol)) return new List<Kline>();
+			if (!pairsUSDT.Contains(symbol)) return new List<Kline>();
 			List<Kline> klines = new List<Kline>();
 			int minutes = intervalMin % 60;
 			int hours = (intervalMin - minutes) / 60;
@@ -89,7 +89,7 @@ namespace WebAPITutorial.Exchanges
 
 		public override async Task<List<BinanceSpotKline>> GetKlinesExchangeDataAsync<BinanceSpotKline>(string symbol, int periodOfHours)
 		{
-			if (!pairsUSDT.Contains(symbol) && !pairsRUB.Contains(symbol)) return new List<BinanceSpotKline>();
+			if (!pairsUSDT.Contains(symbol)) return new List<BinanceSpotKline>();
 			var result = await client.SpotApi.ExchangeData.GetKlinesAsync(symbol, Binance.Net.Enums.KlineInterval.OneHour, DateTime.Now.AddHours(-1 * periodOfHours), DateTime.Now);
 			return (List<BinanceSpotKline>)result.Data;
 		}

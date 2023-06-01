@@ -28,9 +28,9 @@ namespace WebAPITutorial.Controllers
 		[HttpGet("{symbol}")]
 		[ProducesResponseType(StatusCodes.Status400BadRequest)]
 		[ProducesResponseType(StatusCodes.Status200OK)]
-		public async Task<ActionResult<IEnumerable<Product>>> GetExactTicker(string symbol)
+		public async Task<ActionResult<IEnumerable<Product>>> GetExactTicker(string symbol, [FromQuery] bool isRub)
 		{
-			return await _helper.GetExactTickerAsync(symbol, _exchange.GetExactTickerAsync);
+			return await _helper.GetExactTickerAsync(symbol, isRub, _exchange.GetExactTickerAsync);
 		}
 
 		[HttpGet]

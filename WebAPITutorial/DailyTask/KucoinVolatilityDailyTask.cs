@@ -74,7 +74,7 @@ namespace WebAPITutorial.DailyTask
 				double devitation = (logReturn - mean) * (logReturn - mean);
 				averDevitation += devitation;
 			});
-			double vol = Math.Sqrt(averDevitation /*/ list.Count*/);
+			double vol = Math.Sqrt(averDevitation / list.Count);
 
 			if (!_exchange.volatilityToday.ContainsKey(prod.Symbol))
 				_exchange.volatilityToday.Add(prod.Symbol, Double.IsNormal(vol) ? Math.Round(vol * 100, 10) : 0);
@@ -91,9 +91,6 @@ namespace WebAPITutorial.DailyTask
 				{
 					using (var scope = _serviceProvider.CreateScope())
 					{
-						//double denominator, numerator = 0;
-						//double weightedAverReturn = 0;
-						//double averDevitation = 0;
 						byte amountOfRows = 10;
 						var _dataContext = scope.ServiceProvider.GetRequiredService<KucoinVolContext>();
 						switch (p.Symbol)
@@ -116,11 +113,6 @@ namespace WebAPITutorial.DailyTask
 								var listBTC = _dataContext.KucoinVolBTC.ToList().TakeLast(amountOfRows).ToList();
 
 								SetVolatilityWeight(p, listBTC);
-								//SetVolatilityHistorical(p, listBTC);
-
-								//sumQV = listBTC.Sum(btc => btc.QuoteVolume);
-								//denominator = listBTC.Sum(btc => btc.QuoteVolume * btc.ChangePercentage) / sumQV;
-								//numerator = Math.Sqrt(listBTC.Sum(btc => btc.QuoteVolume * (btc.ChangePercentage - denominator * denominator)) / sumQV);
 
 								listBTC.Clear();
 								break;
@@ -143,11 +135,6 @@ namespace WebAPITutorial.DailyTask
 								var listETH = _dataContext.KucoinVolETH.ToList().TakeLast(amountOfRows).ToList();
 
 								SetVolatilityWeight(p, listETH);
-								//SetVolatilityHistorical(p, listETH);
-
-								//sumQV = listETH.Sum(eth => eth.QuoteVolume);
-								//denominator = listETH.Sum(eth => eth.QuoteVolume * eth.ChangePercentage) / sumQV;
-								//numerator = Math.Sqrt(listETH.Sum(eth => eth.QuoteVolume * (eth.ChangePercentage - denominator * denominator)) / sumQV);
 
 								listETH.Clear();
 								break;
@@ -170,11 +157,6 @@ namespace WebAPITutorial.DailyTask
 								var listBNB = _dataContext.KucoinVolBNB.ToList().TakeLast(amountOfRows).ToList();
 
 								SetVolatilityWeight(p, listBNB);
-								//SetVolatilityHistorical(p, listBNB);
-
-								//sumQV = listBNB.Sum(eth => eth.QuoteVolume);
-								//denominator = listBNB.Sum(eth => eth.QuoteVolume * eth.ChangePercentage) / sumQV;
-								//numerator = Math.Sqrt(listBNB.Sum(eth => eth.QuoteVolume * (eth.ChangePercentage - denominator * denominator)) / sumQV);
 
 								listBNB.Clear();
 								break;
@@ -197,11 +179,6 @@ namespace WebAPITutorial.DailyTask
 								var listXRP = _dataContext.KucoinVolXRP.ToList().TakeLast(amountOfRows).ToList();
 
 								SetVolatilityWeight(p, listXRP);
-								//SetVolatilityHistorical(p, listXRP);
-
-								//sumQV = listXRP.Sum(eth => eth.QuoteVolume);
-								//denominator = listXRP.Sum(eth => eth.QuoteVolume * eth.ChangePercentage) / sumQV;
-								//numerator = Math.Sqrt(listXRP.Sum(eth => eth.QuoteVolume * (eth.ChangePercentage - denominator * denominator)) / sumQV);
 
 								listXRP.Clear();
 								break;
@@ -224,11 +201,6 @@ namespace WebAPITutorial.DailyTask
 								var listUNI = _dataContext.KucoinVolUNI.ToList().TakeLast(amountOfRows).ToList();
 
 								SetVolatilityWeight(p, listUNI);
-								//SetVolatilityHistorical(p, listUNI);
-
-								//sumQV = listUNI.Sum(eth => eth.QuoteVolume);
-								//denominator = listUNI.Sum(eth => eth.QuoteVolume * eth.ChangePercentage) / sumQV;
-								//numerator = Math.Sqrt(listUNI.Sum(eth => eth.QuoteVolume * (eth.ChangePercentage - denominator * denominator)) / sumQV);
 
 								listUNI.Clear();
 								break;
@@ -251,11 +223,6 @@ namespace WebAPITutorial.DailyTask
 								var listLTC = _dataContext.KucoinVolLTC.ToList().TakeLast(amountOfRows).ToList();
 
 								SetVolatilityWeight(p, listLTC);
-								//SetVolatilityHistorical(p, listLTC);
-
-								//sumQV = listLTC.Sum(eth => eth.QuoteVolume);
-								//denominator = listLTC.Sum(eth => eth.QuoteVolume * eth.ChangePercentage) / sumQV;
-								//numerator = Math.Sqrt(listLTC.Sum(eth => eth.QuoteVolume * (eth.ChangePercentage - denominator * denominator)) / sumQV);
 
 								listLTC.Clear();
 								break;
@@ -278,11 +245,6 @@ namespace WebAPITutorial.DailyTask
 								var listDOGE = _dataContext.KucoinVolDOGE.ToList().TakeLast(amountOfRows).ToList();
 
 								SetVolatilityWeight(p, listDOGE);
-								//SetVolatilityHistorical(p, listDOGE);
-
-								//sumQV = listDOGE.Sum(eth => eth.QuoteVolume);
-								//denominator = listDOGE.Sum(eth => eth.QuoteVolume * eth.ChangePercentage) / sumQV;
-								//numerator = Math.Sqrt(listDOGE.Sum(eth => eth.QuoteVolume * (eth.ChangePercentage - denominator * denominator)) / sumQV);
 
 								listDOGE.Clear();
 								break;
@@ -305,11 +267,6 @@ namespace WebAPITutorial.DailyTask
 								var listMATIC = _dataContext.KucoinVolMATIC.ToList().TakeLast(amountOfRows).ToList();
 
 								SetVolatilityWeight(p, listMATIC);
-								//SetVolatilityHistorical(p, listMATIC);
-
-								//sumQV = listMATIC.Sum(eth => eth.QuoteVolume);
-								//denominator = listMATIC.Sum(eth => eth.QuoteVolume * eth.ChangePercentage) / sumQV;
-								//numerator = Math.Sqrt(listMATIC.Sum(eth => eth.QuoteVolume * (eth.ChangePercentage - denominator * denominator)) / sumQV);
 
 								listMATIC.Clear();
 								break;
@@ -332,11 +289,6 @@ namespace WebAPITutorial.DailyTask
 								var listSOL = _dataContext.KucoinVolSOL.ToList().TakeLast(amountOfRows).ToList();
 
 								SetVolatilityWeight(p, listSOL);
-								//SetVolatilityHistorical(p, listSOL);
-
-								//sumQV = listSOL.Sum(eth => eth.QuoteVolume);
-								//denominator = listSOL.Sum(eth => eth.QuoteVolume * eth.ChangePercentage) / sumQV;
-								//numerator = Math.Sqrt(listSOL.Sum(eth => eth.QuoteVolume * (eth.ChangePercentage - denominator * denominator)) / sumQV);
 
 								listSOL.Clear();
 								break;
@@ -359,11 +311,6 @@ namespace WebAPITutorial.DailyTask
 								var listARB = _dataContext.KucoinVolARB.ToList().TakeLast(amountOfRows).ToList();
 
 								SetVolatilityWeight(p, listARB);
-								//SetVolatilityHistorical(p, listARB);
-
-								//sumQV = listARB.Sum(eth => eth.QuoteVolume);
-								//denominator = listARB.Sum(eth => eth.QuoteVolume * eth.ChangePercentage) / sumQV;
-								//numerator = Math.Sqrt(listARB.Sum(eth => eth.QuoteVolume * (eth.ChangePercentage - denominator * denominator)) / sumQV);
 
 								listARB.Clear();
 								break;

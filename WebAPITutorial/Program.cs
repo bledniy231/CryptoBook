@@ -60,16 +60,16 @@ builder.Services.AddSwaggerGen(options =>
 		}
 	});
 });
-builder.Services.AddHostedService<DollarCurrencyDailyTaskService>();
-builder.Services.AddHostedService<KucoinVolatilityDailyTaskService>();
-builder.Services.AddSingleton<DollarCurrencyDailyTask>();
-builder.Services.AddSingleton<KucoinVolatilityDailyTask>();
-builder.Services.AddSingleton<IDollarCurrency, GetDollarCurrencyXML>();
+builder.Services.AddHostedService<DailyTasksService>();
+builder.Services.AddSingleton<IDailyTask, DollarCurrencyDailyTask>();
+builder.Services.AddSingleton<IDailyTask, KucoinVolatilityDailyTask>();
+builder.Services.AddSingleton<IDollarCurrency, DollarCurrencyXML>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddSingleton<BinanceExchange>();
 builder.Services.AddSingleton<KucoinExchange>();
 builder.Services.AddSingleton<HuobiExchange>();
 builder.Services.AddSingleton<ExchangeControllerHelper>();
+
 string? connectionString = builder.Configuration.GetConnectionString("PostgreSqlString");
 builder.Services.AddDbContext<KucoinVolContext>(options =>
 {

@@ -2,7 +2,7 @@
 
 namespace WebAPITutorial.DollarCurrency
 {
-	public class GetDollarCurrencyXML : IDollarCurrency
+	public class DollarCurrencyXML : IDollarCurrency
 	{
 		public async Task<decimal> GetDollarCurrencyAsync()
 		{

@@ -48,17 +48,20 @@ namespace WebAPITutorial.Exchanges
 
 			if (result.Success)
 				result.Data.Data.Where(p => pairsUSDT.Contains(p.Symbol)).ToList().ForEach(p => products.Add(ToProduct(p)));
-			//TODO: Сохранение в базу данных
+
 			idProduct = 0;
 			return products;
 		}
 
-		public override async Task<Product> GetExactTickerAsync(string symbol)
+		public override async Task<Product> GetExactTickerAsync(string symbol, bool isRub)
 		{
 			var result = await client.SpotApi.ExchangeData.GetTickerAsync(symbol);
 
 			if (result.Success)
-				return ToProduct(result.Data);
+				if (!isRub)
+					return ToProduct(result.Data);
+				else
+					return ToProduct(result.Data, usdCurrency);
 
 			return new Product();
 		}
@@ -70,7 +73,7 @@ namespace WebAPITutorial.Exchanges
 
 			if (result.Success)
 				result.Data.Data.Where(p => pairsUSDT.Contains(p.Symbol)).ToList().ForEach(p => products.Add(ToProduct(p, usdCurrency)));
-			//TODO: Сохранение в базу данных
+
 			idProduct = 0;
 			return products;
 		}
@@ -106,10 +109,7 @@ namespace WebAPITutorial.Exchanges
 			p.LastPrice = kucoinProduct.LastPrice * usdCurrency;
 			p.BaseVolume = kucoinProduct.Volume;
 			p.QuoteVolume = kucoinProduct.QuoteVolume;
-			//if (kucoinProduct.Symbol == "BTC-USDT")
-				p.Volatility = volatilityToday[kucoinProduct.Symbol];  //GetVolatility(kucoinProduct);
-			//else
-				//p.Volatility = 0;
+			p.Volatility = volatilityToday[kucoinProduct.Symbol];
 			p.Liquidity = GetLiquidity(kucoinProduct.Symbol).Result;
 			p.PriceChange = kucoinProduct.ChangePrice;
 			p.PriceChangePercent = kucoinProduct.ChangePercentage;

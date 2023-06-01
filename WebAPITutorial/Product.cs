@@ -4,7 +4,7 @@
 	{
 		public int Id { get; set; }
 		public int Exchange { get; set; }
-		public string Symbol { get; set; }
+		public string Symbol { get; set; } = null!;
 		public decimal? LastPrice { get; set; }
 		public decimal? BaseVolume { get; set; }
 		public decimal? QuoteVolume { get; set; }

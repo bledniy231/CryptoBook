@@ -45,17 +45,19 @@ namespace WebAPITutorial.Exchanges
 
 			if (result.Success)
 				result.Data.Ticks.Where(p => pairsUSDT.Contains(p.Symbol)).ToList().ForEach(p => products.Add(ToProduct(p)));
-			//TODO: Сохранение в базу данных
 			idProduct = 0;
 			return products;
 		}
 
-		public override async Task<Product> GetExactTickerAsync(string symbol)
+		public override async Task<Product> GetExactTickerAsync(string symbol, bool isRub)
 		{
 			var result = await client.SpotApi.ExchangeData.GetTickerAsync(symbol);
 
 			if (result.Success)
-				return ToProduct(result.Data);
+				if (!isRub)
+					return ToProduct(result.Data);
+				else
+					return ToProduct(result.Data, usdCurrency);
 
 			return new Product();
 		}
@@ -67,7 +69,6 @@ namespace WebAPITutorial.Exchanges
 
 			if (result.Success)
 				result.Data.Ticks.Where(p => pairsUSDT.Contains(p.Symbol)).ToList().ForEach(p => products.Add(ToProduct(p, usdCurrency)));
-			//TODO: Сохранение в базу данных
 			idProduct = 0;
 			return products;
 		}
@@ -104,7 +105,6 @@ namespace WebAPITutorial.Exchanges
 			p.BaseVolume = huobiProduct.Volume;
 			p.QuoteVolume = huobiProduct.QuoteVolume;
 			p.Liquidity = GetLiquidity(huobiProduct.Symbol, averagePrice).Result;
-			Console.WriteLine("ToPr" + averagePrice);
 			p.Volatility = GetVolatility(huobiProduct, averagePrice);
 			p.PriceChange = huobiProduct.ClosePrice - huobiProduct.OpenPrice;
 			if (huobiProduct.ClosePrice != null && huobiProduct.OpenPrice != null)
@@ -119,7 +119,6 @@ namespace WebAPITutorial.Exchanges
 		private double GetVolatility(HuobiSymbolTick huobiProduct, AveragePrice averPr)
 		{
 			double result = 0;
-			Console.WriteLine("Vol" + averPr);
 			if (huobiProduct.ClosePrice != null && huobiProduct.TradeCount != null)
 				result = Math.Sqrt(
 					(((double)huobiProduct.ClosePrice - averPr.averagePrice) *
@@ -138,7 +137,6 @@ namespace WebAPITutorial.Exchanges
 				if (result.Data.Asks.Count() != 0 && result.Data.Bids.Count() != 0)
 				{
 					averPr.averagePrice = (double)result.Data.Asks.Sum(b => b.Price) / result.Data.Asks.Count();
-					Console.WriteLine("Liq" + averPr);
 					bids = result.Data.Bids.Sum(b => b.Price) / result.Data.Bids.Count() * result.Data.Bids.Sum(b => b.Quantity);
 					asks = result.Data.Asks.Sum(a => a.Price) / result.Data.Asks.Count() * result.Data.Asks.Sum(a => a.Quantity);
 				}

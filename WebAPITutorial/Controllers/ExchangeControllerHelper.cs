@@ -15,9 +15,9 @@ namespace WebAPITutorial.Controllers
 				return BadRequest();
 		}
 
-		public async Task<ActionResult<IEnumerable<Product>>> GetExactTickerAsync(string symbol, Func<string, Task<Product>> getExactTickerAsync)
+		public async Task<ActionResult<IEnumerable<Product>>> GetExactTickerAsync(string symbol, bool isRub, Func<string, bool, Task<Product>> getExactTickerAsync)
 		{
-			Task<Product> task = getExactTickerAsync(symbol);
+			Task<Product> task = getExactTickerAsync(symbol, isRub);
 			var result = await task;
 			if (task.IsCompletedSuccessfully)
 				return Ok(result);

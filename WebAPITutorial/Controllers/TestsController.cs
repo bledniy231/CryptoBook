@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Conventions;
 using WebAPITutorial.DBContexts;
 using WebAPITutorial.Models.Identity;
 using WebAPITutorial.Models.Tutorial;
@@ -22,12 +23,23 @@ namespace WebAPITutorial.Controllers
 		}
 
 		[Authorize]
-		[HttpGet("{lessonId}")]
+		[HttpGet("{username}/{lessonId}")]
 		[ProducesResponseType(StatusCodes.Status200OK)]
+		[ProducesResponseType(StatusCodes.Status403Forbidden)]
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		[ProducesResponseType(StatusCodes.Status401Unauthorized)]
-		public async Task<ActionResult<List<Question>>> GetRawTest(int lessonId)
+		public async Task<ActionResult<List<Question>>> GetRawTest(string username, int lessonId)
 		{
+
+			User? user = await _userManager.FindByNameAsync(username);
+			if (user == null) return NotFound($"User with username - \"{username}\" not found ");
+
+			List<ComplitedTest> complitedTests = await _userContext.ComplitedTests
+				.Where(compTest => compTest.UserId == user.Id)
+				.ToListAsync();
+			foreach (var compTest in complitedTests)
+				if (compTest.LessonId == lessonId) return Forbid($"User with username - \"{username}\" have already passed this test");
+
 			List<Question> questions = await _userContext.Questions
 				.IgnoreAutoIncludes()
 				.Where(q => q.LessonId == lessonId).ToListAsync();

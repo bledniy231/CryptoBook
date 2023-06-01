@@ -35,8 +35,6 @@ namespace WebAPITutorial.Controllers
 		[ProducesResponseType(StatusCodes.Status404NotFound)]
 		public async Task<ActionResult<AuthResponse>> Authenticate([FromBody] AuthRequest authRequest, bool isRegister = false)
 		{
-			if (!ModelState.IsValid) return BadRequest("Invalid model");
-
 			User? managedUser = await _userManager.FindByEmailAsync(authRequest.Email);
 			if (managedUser == null) return NotFound("Invalid e-mail");
 
@@ -77,8 +75,6 @@ namespace WebAPITutorial.Controllers
 		[ProducesResponseType(StatusCodes.Status200OK)]
 		public async Task<ActionResult<AuthResponse>> Register([FromBody] RegisterRequest registerRequest)
 		{
-			if (!ModelState.IsValid) return BadRequest("Invalid model");
-
 			User user = new User
 			{
 				FirstName = registerRequest.FirstName,
